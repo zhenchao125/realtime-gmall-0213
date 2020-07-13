@@ -2,4 +2,4 @@
 /gmall-mock/target/
 .idea
 */target
-*/*.iml
+*.iml

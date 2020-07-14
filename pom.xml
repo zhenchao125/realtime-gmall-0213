@@ -19,6 +19,7 @@
         <module>gmall-common</module>
         <module>gmall-mock</module>
         <module>gmall-logger</module>
+        <module>gmall-realtime</module>
     </modules>
     <properties>
         <spark.version>2.4.5</spark.version>
@@ -108,7 +109,7 @@
 
             <dependency>
                 <groupId>org.apache.spark</groupId>
-                <artifactId>spark-streaming-kafka-0-8_2.12</artifactId>
+                <artifactId>spark-streaming-kafka-0-10_2.12</artifactId>
                 <version>${spark.version}</version>
             </dependency>
         </dependencies>

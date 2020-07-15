@@ -34,7 +34,16 @@ object DauApp {
             // 3.2 把集合做一个广播变量
             val midsBD = ssc.sparkContext.broadcast(mids)
             // 返回那些没有启动过的设备的启动记录
-            rdd.filter(startupLog => !midsBD.value.contains(startupLog.mid))
+            rdd
+                .filter(startupLog => !midsBD.value.contains(startupLog.mid))
+                // 如果一个设备在他第一次启动的批次中有多次启动记录, 则无法过滤
+                .map(log => (log.mid, log))
+                .groupByKey()
+                .map {
+                    case (_, logs) =>
+                        logs.toList.sortBy(_.ts).head
+                }
+            
         })
         
         // 3.3 把第一次启动的记录写入到redis中
@@ -48,10 +57,15 @@ object DauApp {
                 })
                 client.close()
             })
+            // 4. 数据写入到hbse中  当天启动的设备的第一条启动记录
+            import org.apache.phoenix.spark._
+            //
+            rdd.saveToPhoenix(
+                "GMALL_DAU",
+                Seq("MID", "UID", "APPID", "AREA", "OS", "CHANNEL", "LOGTYPE", "VERSION", "TS", "LOGDATE", "LOGHOUR"),
+                zkUrl = Some("hadoop102,hadoop103,hadoop104:2181"))
         })
         filteredStartupLogStream.print(10000)
-        
-        // 4. 数据写入到hbse中  当天启动的设备的第一条启动记录
         
         // 6. 开启流
         ssc.start()

@@ -20,6 +20,7 @@
         <module>gmall-mock</module>
         <module>gmall-logger</module>
         <module>gmall-realtime</module>
+        <module>gmall-publisher</module>
     </modules>
     <properties>
         <spark.version>2.4.5</spark.version>

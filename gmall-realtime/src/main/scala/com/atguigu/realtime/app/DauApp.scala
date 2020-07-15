@@ -23,7 +23,7 @@ object DauApp {
         val ssc = new StreamingContext(conf, Seconds(3))
         // 2. 获取一个流
         val sourceStream: DStream[String] = MyKafkaUtil.getKafkaStream(ssc, Constant.STARTUP_TOPIC)
-        // 2.1 把每个json字符串的数据,父封装到一个样例类对象中
+        // 2.1 把每个json字符串的数据,封装到一个样例类对象中
         val startupLogStream = sourceStream.map(json => JSON.parseObject(json, classOf[StartupLog]))
         // 3. 去重  过滤掉一件启动的那些设备的记录  从redis去读取已经启动过的设备的id
         val filteredStartupLogStream = startupLogStream.transform(rdd => {
@@ -57,7 +57,7 @@ object DauApp {
                 })
                 client.close()
             })
-            // 4. 数据写入到hbse中  当天启动的设备的第一条启动记录
+            // 4. 数据写入到hbase中  当天启动的设备的第一条启动记录
             import org.apache.phoenix.spark._
             //
             rdd.saveToPhoenix(

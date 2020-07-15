@@ -13,20 +13,22 @@ import org.apache.spark.streaming.kafka010._
 object MyKafkaUtil {
     
     val kafkaParams = Map[String, Object](
-        "bootstrap.servers" -> "hadoop102:9092,hadoop103:9092,hadoop104:9092",
+        "bootstrap.servers" -> ConfigUtil.getProperty("config.properties", "kafka.servers"),
         "key.deserializer" -> classOf[StringDeserializer],
         "value.deserializer" -> classOf[StringDeserializer],
-        "group.id" -> "bigdata",
+        "group.id" -> ConfigUtil.getProperty("config.properties", "group.id"),
         "auto.offset.reset" -> "latest",
         "enable.auto.commit" -> (true: java.lang.Boolean)
     )
     
     def getKafkaStream(ssc: StreamingContext, topic: String) = {
-        KafkaUtils.createDirectStream[String, String](
-            ssc,
-            PreferConsistent, // 标配
-            Subscribe[String, String](Set(topic), kafkaParams)
-        ).map(_.value())
+        KafkaUtils
+            .createDirectStream[String, String](
+                ssc,
+                PreferConsistent, // 标配
+                Subscribe[String, String](Set(topic), kafkaParams)
+            )
+            .map(_.value())
     }
     
 }

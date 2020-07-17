@@ -7,6 +7,7 @@ import com.alibaba.fastjson.JSONObject
 import com.alibaba.otter.canal.client.{CanalConnector, CanalConnectors}
 import com.alibaba.otter.canal.protocol.CanalEntry.{EventType, RowChange}
 import com.alibaba.otter.canal.protocol.{CanalEntry, Message}
+import com.atguigu.common.Constant
 import com.google.protobuf.ByteString
 
 import scala.collection.JavaConversions._
@@ -29,7 +30,9 @@ object CanalClient {
                     val value: String = column.getValue
                     obj.put(key, value)
                 }
-                println(obj.toJSONString)
+                //println(obj.toJSONString)
+                // 4. 解析后的数据, 组成json字符串, 写入到kafka
+                MyKafkaUtil.sendToKafka(Constant.TOPIC_ORDER_INFO,  obj.toJSONString)
             }
         }
     }
@@ -63,21 +66,13 @@ object CanalClient {
                         
                     }
                 }
-                
-                
-                
             }else{  // 没有拉取到数据
                 System.out.println("没有拉取到数据, 3s后继续拉取....");
                 Thread.sleep(3000)  // 休眠3秒后继续拉取数据
             }
-            
-
         }
         
         
-       
-        
-        // 4. 解析后的数据, 组成json字符串, 写入到kafka
         
         
     }

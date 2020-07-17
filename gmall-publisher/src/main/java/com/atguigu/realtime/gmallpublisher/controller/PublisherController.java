@@ -40,6 +40,12 @@ public class PublisherController {
         map2.put("value", "223");
         result.add(map2);
 
+        // {"id":"order_amount","name":"新增交易额","value":1000.2 }
+        Map<String, String> map3 = new HashMap<>();
+        map3.put("id", "order_amount");
+        map3.put("name", "新增交易额");
+        map3.put("value", service.getTotalAmount(date).toString());
+        result.add(map3);
         return JSON.toJSONString(result);
     }
 
@@ -57,8 +63,20 @@ public class PublisherController {
             result.put("yesterday", yesterday);
 
             return JSON.toJSONString(result);
-        } else {
-            return null;
+        } else if("order_amount".equals(id)){ // http://localhost:8070/realtime-hour?id=order_amount&date=2020-02-14
+            Map<String, Double> today = service.getHourAmount(date);
+            Map<String, Double> yesterday = service.getHourAmount(getYesterday(date));
+            /*
+                {"yesterday":{"11":383,"12":123,"17":88,"19":200 },
+                    "today":{"12":38,"13":1233,"17":123,"19":688 }}
+
+            */
+            Map<String, Map<String, Double>> result = new HashMap<>();
+            result.put("today", today);
+            result.put("yesterday", yesterday);
+            return JSON.toJSONString(result);
+        }else{
+            return  null;
         }
     }
 
@@ -89,7 +107,9 @@ http://localhost:8070/realtime-hour?id=dau&date=2020-02-11
 http://localhost:8070/realtime-total?date=2020-02-11
 
 [{"id":"dau","name":"新增日活","value":1200},
-{"id":"new_mid","name":"新增设备","value":233} ]
+{"id":"new_mid","name":"新增设备","value":233 },
+{"id":"order_amount","name":"新增交易额","value":1000.2 }]
+
 
 
 

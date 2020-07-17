@@ -24,6 +24,5 @@ object OrderApp extends BaseApp {
                 zkUrl = Option("hadoop102,hadoop103,hadoop104:2181") //  Option(null)  == None  Some(null)
             )
         })
-        
     }
 }

@@ -42,7 +42,7 @@ object AlertApp extends BaseApp {
                         // 只关注领取优惠券的用户
                         log.eventId match {
                             case "coupon" =>
-                                uidSet.add(log.uid)
+                                uidSet.add(log.uid)  // 领取优惠券的用户
                                 itemSet.add(log.itemId) // 优惠券对应的商品
                             
                             case "clickItem" =>

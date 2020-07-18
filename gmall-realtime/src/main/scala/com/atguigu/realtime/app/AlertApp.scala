@@ -26,8 +26,9 @@ object AlertApp extends BaseApp {
             .groupByKey
         // 2. 产生预警信息
         val alertInfoStream = eventLogGroupedStream.map {
+            // eventLogIt 表示当前mid上5分钟内所有的事件
             case (mid, eventLogIt) =>
-                // eventLogIt 表示当前mid上5分钟内所有的事件
+                // 领取优惠券的用户
                 val uidSet = new java.util.HashSet[String]()
                 // 存储5分钟内在当前设备上所有的事件
                 val eventList = new util.ArrayList[String]()
@@ -42,13 +43,14 @@ object AlertApp extends BaseApp {
                         // 只关注领取优惠券的用户
                         log.eventId match {
                             case "coupon" =>
-                                uidSet.add(log.uid)  // 领取优惠券的用户
+                                uidSet.add(log.uid) // 领取优惠券的用户
                                 itemSet.add(log.itemId) // 优惠券对应的商品
                             
                             case "clickItem" =>
                                 // 一旦出现浏览商品, 则不会再产生预警信息
                                 isClickItem = true
                                 break
+                            case _ => // 其他事件不做任何处理
                         }
                     })
                 }
@@ -56,15 +58,15 @@ object AlertApp extends BaseApp {
                 // (是否预警, Alert(....))
                 (!isClickItem && uidSet.size() >= 3, AlertInfo(mid, uidSet, itemSet, eventList, System.currentTimeMillis()))
         }
-        
+        alertInfoStream.print(10000)
         // 3. 把数据写入到es中
-        alertInfoStream
+        /*alertInfoStream
             .filter(_._1)
             .foreachRDD(rdd => {
                 // ..../
                 
             })
-        
+        */
         
     }
 }
@@ -72,6 +74,13 @@ object AlertApp extends BaseApp {
 
 /*
 ----
+需求：同一设备，5分钟内三次及以上用不同账号登录并领取优惠劵，
+并且在登录到领劵过程中没有浏览商品。同时达到以上要求则产生一条预警日志。
+ 同一设备，每分钟只记录一次预警。
+
+
+
+
 同一设备  ->   group by mid_id
 5分钟内的数据, 每6秒统计一次 -> 窗口 窗口的长度: 5分钟  窗口的步长:6s
 

@@ -5,11 +5,11 @@ import java.util
 import com.alibaba.fastjson.JSON
 import com.atguigu.common.Constant
 import com.atguigu.realtime.bean.{AlertInfo, EventLog}
+import com.atguigu.realtime.util.EsUtil._
 import com.atguigu.realtime.util.{EsUtil, MyKafkaUtil}
 import org.apache.spark.streaming.{Minutes, Seconds, StreamingContext}
 
 import scala.util.control.Breaks._
-import EsUtil._
 
 /**
  * Author atguigu
@@ -72,8 +72,6 @@ object AlertApp extends BaseApp {
                 
                 rdd.saveToES("gmall_coupon_alert")
             })
-        
-        
     }
 }
 

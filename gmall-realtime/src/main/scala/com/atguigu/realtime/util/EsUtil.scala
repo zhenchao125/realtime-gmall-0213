@@ -1,8 +1,10 @@
 package com.atguigu.realtime.util
 
+import com.atguigu.realtime.bean.AlertInfo
 import io.searchbox.client.config.HttpClientConfig
 import io.searchbox.client.{JestClient, JestClientFactory}
 import io.searchbox.core.{Bulk, Index}
+import org.apache.spark.rdd.RDD
 
 /**
  * Author atguigu
@@ -36,7 +38,7 @@ object EsUtil {
             .defaultIndex(index)
             .defaultType("_doc")
         
-        source.foreach{
+        source.foreach {
             case (id: String, source) =>
                 val builder = new Index.Builder(source).id(id)
                 bulkBuilder.addAction(builder.build())
@@ -59,6 +61,16 @@ object EsUtil {
         client.execute(action)
         
         client.shutdownClient()
+    }
+    
+    
+    implicit class RichES(rdd: RDD[AlertInfo]) {
+        def saveToES(index: String) = {
+            rdd.foreachPartition((it: Iterator[AlertInfo]) => {
+                // es 每个document都有id,   id如果使用分钟数表示:
+                EsUtil.insertBulk(index, it.map(info => (info.mid + ":" + info.ts / 1000 / 60, info)))
+            })
+        }
     }
     
 }

@@ -5,10 +5,11 @@ import java.util
 import com.alibaba.fastjson.JSON
 import com.atguigu.common.Constant
 import com.atguigu.realtime.bean.{AlertInfo, EventLog}
-import com.atguigu.realtime.util.MyKafkaUtil
+import com.atguigu.realtime.util.{EsUtil, MyKafkaUtil}
 import org.apache.spark.streaming.{Minutes, Seconds, StreamingContext}
 
 import scala.util.control.Breaks._
+import EsUtil._
 
 /**
  * Author atguigu
@@ -60,13 +61,18 @@ object AlertApp extends BaseApp {
         }
         alertInfoStream.print(10000)
         // 3. 把数据写入到es中
-        /*alertInfoStream
+        alertInfoStream
             .filter(_._1)
+            .map(_._2)
             .foreachRDD(rdd => {
-                // ..../
+                /*rdd.foreachPartition((it: Iterator[AlertInfo]) => {
+                    // es 每个document都有id,   id如果使用分钟数表示:
+                    EsUtil.insertBulk("gmall_coupon_alert", it.map(info => (info.mid + ":" + info.ts / 1000 / 60, info)))
+                })*/
                 
+                rdd.saveToES("gmall_coupon_alert")
             })
-        */
+        
         
     }
 }

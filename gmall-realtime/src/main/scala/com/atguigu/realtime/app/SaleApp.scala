@@ -1,11 +1,14 @@
 package com.atguigu.realtime.app
 
 import java.util
+import java.util.Properties
 
 import com.alibaba.fastjson.JSON
 import com.atguigu.common.Constant
-import com.atguigu.realtime.bean.{OrderDetail, OrderInfo, SaleDetail}
-import com.atguigu.realtime.util.{MyKafkaUtil, RedisUtil}
+import com.atguigu.realtime.bean.{OrderDetail, OrderInfo, SaleDetail, UserInfo}
+import com.atguigu.realtime.util.{EsUtil, MyKafkaUtil, RedisUtil}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.dstream.DStream
 import org.json4s.DefaultFormats
@@ -20,14 +23,58 @@ import scala.collection.mutable
  */
 object SaleApp extends BaseApp {
     
-    
     override def run(ssc: StreamingContext): Unit = {
         val (orderInfoStream, orderDetailStream) = getOrderInfoAndOrderDetailStream(ssc)
-        
-        val saleDetailStream: DStream[SaleDetail] = fullJoin(orderInfoStream, orderDetailStream)
+        // 双流join
+        var saleDetailStream: DStream[SaleDetail] = fullJoin(orderInfoStream, orderDetailStream)
+        // 把user信息join进去: 根据user_id去mysql中反向查询到user的数据
+        saleDetailStream = joinUser(saleDetailStream, ssc)
+        // 把信息吸入到es
+        saleDetailStream.foreachRDD(rdd => {
+            rdd.foreachPartition(it => {
+                EsUtil.insertBulk("gmall_sale_detail", it.map(detail => (detail.order_id + "_" + detail.order_detail_id, detail)))
+            })
+        })
         
         saleDetailStream.print(100)
     }
+    
+    def joinUser(saleDetailStream: DStream[SaleDetail], ssc: StreamingContext) = {
+        val url = "jdbc:mysql://hadoop102:3306/gmall0213?useSSL=false"
+        val tableName = "user_info"
+        val props = new Properties()
+        
+        def readUserInfo() = {
+            val spark: SparkSession = SparkSession.builder()
+                .config(ssc.sparkContext.getConf)
+                .getOrCreate()
+            import spark.implicits._
+            spark.read.jdbc(url, tableName, props)
+                .as[UserInfo]
+                .rdd
+        }
+        
+        
+        props.setProperty("user", "root")
+        props.setProperty("password", "aaaaaa")
+        
+        // 用spark-sql从mysql读数据
+        // 1. 先得到Spark-session
+        
+        saleDetailStream.transform((rdd: RDD[SaleDetail]) => {
+            // 1. 拿到用户信息
+            val userInfoRDD = readUserInfo().map(user => (user.id, user))
+            // 2. saleDetail编程kv, 然后和User join 补齐user信息
+            val detailRDD: RDD[(String, SaleDetail)] = rdd.map(detail => (detail.user_id, detail))
+            detailRDD
+                .join(userInfoRDD)
+                .map {
+                    case (userId, (saleDetail, userInfo)) =>
+                        saleDetail.mergeUserInfo(userInfo)
+                }
+        })
+    }
+    
     
     def fullJoin(orderInfoStream: DStream[OrderInfo], orderDetailStream: DStream[OrderDetail]) = {
         // 把oderInfo的信息缓存到redis中
@@ -39,6 +86,7 @@ object SaleApp extends BaseApp {
         def cacheOderDetailToRedis(orderDetail: OrderDetail, client: Jedis) = {
             client.setex("orderDetail:" + orderDetail.order_id + ":" + orderDetail.id, 60 * 30, Serialization.write(orderDetail)(DefaultFormats))
         }
+        
         // select ... a join b  on ..=..
         // join: 流必须是kv形式, k就是他们的连接条件
         val orderIdAndOrderInfoStream: DStream[(String, OrderInfo)] = orderInfoStream
@@ -98,6 +146,7 @@ object SaleApp extends BaseApp {
                             cacheOderDetailToRedis(orderDetail, client)
                             mutable.Set[SaleDetail]()
                         } else {
+                            println(orderInfoString)
                             val orderInfo = JSON.parseObject(orderInfoString, classOf[OrderInfo])
                             // join在一起,. 不需要缓存orderDetail
                             val saleDetail = SaleDetail().mergeOrderInfo(orderInfo).mergeOrderDetail(orderDetail)

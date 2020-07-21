@@ -19,7 +19,8 @@ object RedisUtil {
     val pool = new JedisPool(conf, "hadoop102", 8000)
     
     def getClient = {
-        pool.getResource
+//        pool.getResource
+        new Jedis("hadoop102", 8000)
     }
     
     

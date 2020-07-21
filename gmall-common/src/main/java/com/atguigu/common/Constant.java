@@ -10,6 +10,7 @@ public class Constant {
 
 
     public static final String TOPIC_ORDER_INFO = "topic_order_info";
+    public static final String TOPIC_ORDER_DETAIL = "topic_order_detail";
 
 
 }

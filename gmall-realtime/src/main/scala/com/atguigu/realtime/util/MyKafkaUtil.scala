@@ -19,9 +19,11 @@ object MyKafkaUtil {
         "group.id" -> ConfigUtil.getProperty("config.properties", "group.id"),
         "auto.offset.reset" -> "latest",
         "enable.auto.commit" -> (true: java.lang.Boolean)
+        
     )
     
     def getKafkaStream(ssc: StreamingContext, topic: String) = {
+        println(kafkaParams)
         KafkaUtils
             .createDirectStream[String, String](
                 ssc,

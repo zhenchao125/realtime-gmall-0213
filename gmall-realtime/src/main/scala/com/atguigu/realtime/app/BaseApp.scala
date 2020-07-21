@@ -7,7 +7,7 @@ trait BaseApp {
     
     def main(args: Array[String]): Unit = {
         // 1. 创建一个StreamingContext
-        val conf = new SparkConf().setMaster("local[2]").setAppName("DauApp")
+        val conf = new SparkConf().setMaster("local[*]").setAppName("DauApp")
         val ssc = new StreamingContext(conf, Seconds(3))
         
         run(ssc)

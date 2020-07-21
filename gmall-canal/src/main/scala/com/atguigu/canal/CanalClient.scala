@@ -11,6 +11,7 @@ import com.atguigu.common.Constant
 import com.google.protobuf.ByteString
 
 import scala.collection.JavaConversions._
+import scala.util.Random
 /**
  * Author atguigu
  * Date 2020/7/17 11:16
@@ -19,21 +20,35 @@ object CanalClient {
     
     def handleData(rowDatas: util.List[CanalEntry.RowData], tableName: String, eventType: CanalEntry.EventType) = {
         if(tableName == "order_info" && eventType == EventType.INSERT && rowDatas != null && !rowDatas.isEmpty){
-            for(rowData <- rowDatas){
-                // 变化后的列
-                // mysql中的一行, 到kafka的时候是一条
-                val obj = new JSONObject()
-                val columnList: util.List[CanalEntry.Column] = rowData.getAfterColumnsList
-                for( column <- columnList){
-                    // id: 100  total_amount: 1000.2
-                    val key: String = column.getName
-                    val value: String = column.getValue
-                    obj.put(key, value)
-                }
-                //println(obj.toJSONString)
-                // 4. 解析后的数据, 组成json字符串, 写入到kafka
-                MyKafkaUtil.sendToKafka(Constant.TOPIC_ORDER_INFO,  obj.toJSONString)
+            val topic = Constant.TOPIC_ORDER_INFO
+            sendToKafka(rowDatas, topic)
+        }else if(tableName == "order_detail" && eventType == EventType.INSERT && rowDatas != null && !rowDatas.isEmpty){
+            val topic = Constant.TOPIC_ORDER_DETAIL
+            sendToKafka(rowDatas, topic)
+        }
+    }
+    
+    // alt+ctrl+m   抽取方法出来
+    private def sendToKafka(rowDatas: util.List[CanalEntry.RowData], topic: String): Unit = {
+        for (rowData <- rowDatas) {
+            // 变化后的列
+            // mysql中的一行, 到kafka的时候是一条
+            val obj = new JSONObject()
+            val columnList: util.List[CanalEntry.Column] = rowData.getAfterColumnsList
+            for (column <- columnList) {
+                // id: 100  total_amount: 1000.2
+                val key: String = column.getName
+                val value: String = column.getValue
+                obj.put(key, value)
             }
+            // 4. 解析后的数据, 组成json字符串, 写入到kafka
+            new Thread(){
+                override def run(): Unit = {
+                    Thread.sleep(new Random().nextInt(20*1000))
+                    MyKafkaUtil.sendToKafka(topic, obj.toJSONString)
+                }
+            }.start()
+            
         }
     }
     
@@ -71,9 +86,5 @@ object CanalClient {
                 Thread.sleep(3000)  // 休眠3秒后继续拉取数据
             }
         }
-        
-        
-        
-        
     }
 }

@@ -61,7 +61,7 @@ object AlertApp extends BaseApp {
         }
         alertInfoStream.print(10000)
         // 3. 把数据写入到es中
-        alertInfoStream
+        /*alertInfoStream
             .filter(_._1)
             .map(_._2)
             .foreachRDD(rdd => {
@@ -71,7 +71,7 @@ object AlertApp extends BaseApp {
                 })*/
                 
                 rdd.saveToES("gmall_coupon_alert")
-            })
+            })*/
     }
 }
 

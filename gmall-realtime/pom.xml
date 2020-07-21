@@ -65,6 +65,12 @@
             <artifactId>janino</artifactId>
             <version>3.0.8</version>
         </dependency>
+        <dependency>
+            <groupId>org.codehaus.janino</groupId>
+            <artifactId>commons-compiler</artifactId>
+            <version>3.0.8</version>
+        </dependency>
+
         <!-- es 相关依赖结束 -->
         <dependency>
             <groupId>mysql</groupId>

@@ -29,7 +29,7 @@ object SaleApp extends BaseApp {
         var saleDetailStream: DStream[SaleDetail] = fullJoin(orderInfoStream, orderDetailStream)
         // 把user信息join进去: 根据user_id去mysql中反向查询到user的数据
         saleDetailStream = joinUser(saleDetailStream, ssc)
-        // 把信息吸入到es
+        // 把信息写入到es
         saleDetailStream.foreachRDD(rdd => {
             rdd.foreachPartition(it => {
                 EsUtil.insertBulk("gmall_sale_detail", it.map(detail => (detail.order_id + "_" + detail.order_detail_id, detail)))
@@ -43,6 +43,8 @@ object SaleApp extends BaseApp {
         val url = "jdbc:mysql://hadoop102:3306/gmall0213?useSSL=false"
         val tableName = "user_info"
         val props = new Properties()
+        props.setProperty("user", "root")
+        props.setProperty("password", "aaaaaa")
         
         def readUserInfo() = {
             val spark: SparkSession = SparkSession.builder()
@@ -53,14 +55,8 @@ object SaleApp extends BaseApp {
                 .as[UserInfo]
                 .rdd
         }
-        
-        
-        props.setProperty("user", "root")
-        props.setProperty("password", "aaaaaa")
-        
         // 用spark-sql从mysql读数据
         // 1. 先得到Spark-session
-        
         saleDetailStream.transform((rdd: RDD[SaleDetail]) => {
             // 1. 拿到用户信息
             val userInfoRDD = readUserInfo().map(user => (user.id, user))

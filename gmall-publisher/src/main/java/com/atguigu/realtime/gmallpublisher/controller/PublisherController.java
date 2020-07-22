@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -90,6 +91,16 @@ public class PublisherController {
 
         return LocalDate.parse(date).plusDays(-1).toString();
 
+    }
+
+    //  	http://localhost:8070/sale_detail?date=2019-05-20&&startpage=1&&size=5&&keyword=手机小米
+    @GetMapping("/sale_detail")
+    public String saleDetail(String date, int startpage, int size, String keyword) throws IOException {
+        Map<String, Object> genderAgg = service.getSaleDetailAndAgg(date, keyword, startpage, size, "user_gender", 2);
+        Map<String, Object> ageAgg = service.getSaleDetailAndAgg(date, keyword, startpage, size, "user_age", 100);
+        System.out.println(genderAgg);
+        System.out.println(ageAgg);
+        return "ok";
     }
 
 

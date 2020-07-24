@@ -52,7 +52,7 @@ object MapJoin {
             case (k1, v1) =>
                 val arr: Array[(String, Int)] = bd.value
                 arr.foreach(k2 => {
-                    if(k1 != k2 &&  !arr.map(_._1).contains(k1)
+                
                 })
                 
                 null

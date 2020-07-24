@@ -17,6 +17,7 @@ import scala.util.control.Breaks._
  */
 object AlertApp extends BaseApp {
     override def run(ssc: StreamingContext): Unit = {
+        
         val eventLogStream = MyKafkaUtil.getKafkaStream(ssc, Constant.EVENT_TOPIC)
             .map(log => JSON.parseObject(log, classOf[EventLog]))
             .window(Minutes(5), Seconds(6)) // 给流添加窗口
